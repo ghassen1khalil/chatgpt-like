@@ -10,9 +10,10 @@ import { MatSidenavModule } from '@angular/material/sidenav';
 import { MatListModule } from '@angular/material/list';
 import { MatIconModule } from '@angular/material/icon';
 import { MatSnackBarModule, MatSnackBar } from '@angular/material/snack-bar';
-import { MatDialogModule, MatDialog } from '@angular/material/dialog';
+import { MatDialogModule, MatDialog, MatDialogRef } from '@angular/material/dialog';
 import { CommonModule } from '@angular/common';
 import { ChatService, Message, ChatSession } from './chat.service';
+import { MatTooltipModule } from '@angular/material/tooltip';
 
 @Component({
   selector: 'edit-label-dialog',
@@ -35,14 +36,14 @@ import { ChatService, Message, ChatSession } from './chat.service';
 export class EditLabelDialog {
   name: string = '';
 
-  constructor(public dialog: MatDialog) {}
+  constructor(public dialogRef: MatDialogRef<EditLabelDialog>) {}
 
   onCancel() {
-    this.dialog.closeAll();
+    this.dialogRef.close();
   }
 
   onSave() {
-    this.dialog.closeAll();
+    this.dialogRef.close(this.name);
   }
 }
 
@@ -60,6 +61,7 @@ export class EditLabelDialog {
     MatIconModule,
     MatSnackBarModule,
     MatDialogModule,
+    MatTooltipModule,
     EditLabelDialog
   ],
   template: `
@@ -68,9 +70,9 @@ export class EditLabelDialog {
         <button mat-raised-button 
                 color="primary" 
                 (click)="createNewChat()"
-                style="width: 100%; margin-bottom: 16px;">
+                style="width: 100%; margin-bottom: 16px;"
+                matTooltip="New Chat">
           <mat-icon>add</mat-icon>
-          New Chat
         </button>
         
         <mat-nav-list>
@@ -84,7 +86,8 @@ export class EditLabelDialog {
                 <span matListItemTitle>{{session.name}}</span>
                 <span matListItemLine>{{session.createdAt | date:'short'}}</span>
               </div>
-              <button mat-icon-button (click)="editSessionLabel(session); $event.stopPropagation()">
+              <button mat-icon-button (click)="editSessionLabel(session); $event.stopPropagation()"
+                      matTooltip="Edit Chat Name">
                 <mat-icon>edit</mat-icon>
               </button>
             </div>
@@ -101,9 +104,9 @@ export class EditLabelDialog {
                 <button mat-raised-button
                         color="accent"
                         [disabled]="!currentSession"
-                        (click)="exportCurrentSession()">
+                        (click)="exportCurrentSession()"
+                        matTooltip="Save Chat">
                   <mat-icon>save</mat-icon>
-                  Save Chat
                 </button>
               </div>
             </mat-card-header>
@@ -125,11 +128,20 @@ export class EditLabelDialog {
                          placeholder="Type your message here...">
                 </mat-form-field>
                 
+                <button mat-icon-button
+                        color="primary"
+                        (click)="copyLastMessage()"
+                        [disabled]="!hasMessages()"
+                        matTooltip="Copy Last Message">
+                  <mat-icon>content_copy</mat-icon>
+                </button>
+
                 <button mat-raised-button 
                         color="primary" 
                         (click)="sendMessage()"
-                        [disabled]="!userInput.trim()">
-                  Send
+                        [disabled]="!userInput.trim()"
+                        matTooltip="Send Message">
+                  <mat-icon>send</mat-icon>
                 </button>
               </div>
             </mat-card-content>
@@ -233,6 +245,20 @@ export class App implements OnInit {
             duration: 3000,
           });
         }
+      });
+    }
+  }
+
+  hasMessages(): boolean {
+    return Boolean(this.currentSession?.messages && this.currentSession.messages.length > 0);
+  }
+
+  copyLastMessage() {
+    if (this.currentSession?.messages && this.currentSession.messages.length > 0) {
+      const lastMessage = this.currentSession.messages[this.currentSession.messages.length - 1];
+      this.userInput = lastMessage.content;
+      this.snackBar.open('Last message copied to input', 'Close', {
+        duration: 2000,
       });
     }
   }
